@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Muwa — сайт кофейни-кондитерской (Самара)
 
-## Getting Started
+Демо-версия сайта для показа руководителю кофейни. Работает **полностью локально**,
+без подключения внешних сервисов (оплата СБП/T-Pay, Telegram, БД — в демо-режиме).
 
-First, run the development server:
+Стек: **Next.js 16 (App Router) + TypeScript**. Фирменная палитра, шрифты
+Oswald / Golos Text / Nunito, компонентный дизайн.
+
+## Запуск на ноутбуке
+
+Нужен установленный **Node.js 20+**.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install       # один раз — поставить зависимости
+npm run dev       # запустить в режиме разработки
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Открой в браузере: **http://localhost:3000**
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Продакшн-сборка локально:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Запуск через Docker (по желанию)
 
-To learn more about Next.js, take a look at the following resources:
+Нужен установленный Docker.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+docker compose up --build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Сайт будет на **http://localhost:3000**. Остановить: `docker compose down`.
 
-## Deploy on Vercel
+## Что работает в демо
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Витрина дня с вкладками (десерты / кухня / напитки) и добавлением в предзаказ
+- Предзаказ «с собой»: корзина → филиал и время → контакты → «оплата» → номер заказа + QR
+- Подарочные сертификаты: номинал, пожелание → промокод
+- Анкета «Хочу в команду»
+- Переключение филиалов (Чапаевская / Некрасовская), контакты, карта → Яндекс.Карты
+- SEO: мета-теги, Open Graph, Schema.org (CafeOrCoffeeShop), sitemap.xml, robots.txt
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> Оплата и уведомления — **демо**. Номера заказов, QR и промокоды генерируются локально.
+> Если задать `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID` (см. `.env.example`), заказы и
+> анкеты начнут приходить в Telegram; иначе они просто печатаются в консоль сервера.
+
+## Фотографии
+
+Лежат в `public/assets/`. Чтобы заменить/добавить — клади файлы туда же с теми же именами
+(см. `public/assets/README.md`). Отсутствующие фото автоматически заменяются плейсхолдером.
+
+## Дальше (после одобрения проекта)
+
+Прод-версия предполагает Payload CMS + PostgreSQL, реальный эквайринг (Т-Касса: T-Pay + СБП),
+фискализацию 54-ФЗ, хостинг в РФ (152-ФЗ), Яндекс.Метрику. См. план проекта.

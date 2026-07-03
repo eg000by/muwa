@@ -1,0 +1,11 @@
+services:
+  muwa:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      # Опционально (можно не задавать — тогда демо-режим, уведомления в лог):
+      # - TELEGRAM_BOT_TOKEN=xxx
+      # - TELEGRAM_CHAT_ID=xxx
+    restart: unless-stopped
