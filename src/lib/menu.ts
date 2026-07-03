@@ -31,20 +31,18 @@ export const PRODUCTS: Record<TabKey, Product[]> = {
     { id: "moti", name: "Моти", desc: "Рисовое тесто с нежной начинкой", price: 220, kbzhu: "≈180 ккал · Б3 Ж6 У29", img: "muwa-moti.jpg" },
     { id: "shokolad", name: "Шоколадный ломтик", desc: "Плотный шоколадный бисквит", price: 300, kbzhu: "≈380 ккал · Б7 Ж22 У36", img: "muwa-shokolad.jpg" },
     { id: "bulochka", name: "Булочка с маком", desc: "Сдобная булочка с маковой начинкой", price: 180, kbzhu: "≈290 ккал · Б6 Ж10 У42", img: "muwa-bulochka-mak.jpg" },
-    { id: "sanseb", name: "Фисташковый блинный торт", desc: "Тонкие блины и фисташковый крем", price: 390, kbzhu: "≈420 ккал · Б9 Ж26 У33" },
   ],
   kitchen: [
     { id: "kish", name: "Киш с беконом", desc: "Открытый пирог с беконом и заливкой", price: 340, kbzhu: "≈420 ккал · Б15 Ж27 У28", img: "muwa-kish-bekon.jpg", tag: "хит" },
     { id: "galeta", name: "Галета с баклажаном", desc: "Хрустящее тесто, баклажан и томаты", price: 320, kbzhu: "≈380 ккал · Б10 Ж21 У36", img: "muwa-galeta-baklazhan.jpg" },
-    { id: "falafel", name: "Фалафель в пите", desc: "Легендарный, с соусом тхина", price: 340, kbzhu: "≈460 ккал · Б14 Ж19 У48", tag: "легенда" },
+    { id: "sandrost", name: "Сэндвич с ростбифом", desc: "Зерновой хлеб, сочный ростбиф, корнишоны и перец", price: 390, kbzhu: "≈480 ккал · Б26 Ж22 У40", img: "muwa-sandwich-rostbeef.jpg", tag: "новинка" },
+    { id: "sandchick", name: "Сэндвич с курицей", desc: "Гриль-тост с курицей, чеддером и томатом", price: 340, kbzhu: "≈440 ккал · Б24 Ж21 У38", img: "muwa-sandwich-chicken.jpg" },
+    { id: "pita", name: "Сытная пита", desc: "Тёплая пита с мясной начинкой и овощами", price: 350, kbzhu: "≈470 ккал · Б18 Ж20 У50", img: "muwa-pita2.jpg" },
+    { id: "humus", name: "Хумус с грибами", desc: "Нежный хумус, жареные грибы и тыквенные семечки, с питой", price: 330, kbzhu: "≈390 ккал · Б14 Ж22 У34", img: "muwa-humus.jpg" },
   ],
   drinks: [
     { id: "grib", name: "Грибной латте", desc: "На чаге, мягкий и согревающий", price: 260, kbzhu: "на молоке по вкусу", img: "muwa-grib.jpg" },
     { id: "filter", name: "Фильтр", desc: "Кофе недели, заварка V60", price: 250, kbzhu: "без сахара", img: "muwa-filtr.jpg", tag: "кофе недели" },
-    { id: "capp", name: "Капучино", desc: "Спешелти-эспрессо и молоко", price: 220, kbzhu: "на молоке по вкусу" },
-    { id: "ginger", name: "Имбирный американо", desc: "Эспрессо, имбирь, цитрус", price: 240, kbzhu: "бодрит" },
-    { id: "matcha", name: "Матча латте", desc: "Церемониальная матча", price: 280, kbzhu: "на молоке по вкусу" },
-    { id: "tea", name: "Авторский чай", desc: "Сезонный купаж, чайник 500 мл", price: 260, kbzhu: "на компанию" },
   ],
 };
 

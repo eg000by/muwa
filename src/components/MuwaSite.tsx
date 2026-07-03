@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   PRODUCTS, BRANCHES, TIMES, GIFT_AMOUNTS, TAB_HINTS, ALL_PRODUCTS,
   priceLabel, type TabKey, type BranchKey,
@@ -29,6 +29,99 @@ function CardImage({ img, name }: { img?: string; name: string }) {
   return <img src={`/assets/${img}`} alt={name} onError={() => setErr(true)} />;
 }
 
+/** Логотип: рамка фиксированного размера + зум внутрь картинки,
+ *  чтобы центральные эмблема и текст читались крупнее. */
+function Logo({ size, radius }: { size: number; radius: number }) {
+  return (
+    <span style={{ display: "inline-block", width: size, height: size, borderRadius: radius, overflow: "hidden", flex: "none" }}>
+      <img src="/assets/muwa-logo2.jpg" alt="MUWA" style={{ width: "100%", height: "100%", objectFit: "cover", transform: "scale(1.4)" }} />
+    </span>
+  );
+}
+
+// useLayoutEffect на клиенте, useEffect на сервере (без предупреждений SSR)
+const useIso = typeof document !== "undefined" ? useLayoutEffect : useEffect;
+
+/** Переключатель филиалов с «резиновым» ползунком-пилюлей,
+ *  который едет и подстраивается под ширину активной кнопки. */
+function BranchSeg({
+  branch, onSelect, style, full,
+}: {
+  branch: BranchKey;
+  onSelect: (b: BranchKey) => void;
+  style?: React.CSSProperties;
+  full?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState({ left: 0, top: 0, width: 0, height: 0 });
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const a = el.querySelector<HTMLButtonElement>(`button[data-k="${branch}"]`);
+    if (a) setThumb({ left: a.offsetLeft, top: a.offsetTop, width: a.offsetWidth, height: a.offsetHeight });
+  }, [branch]);
+
+  useIso(() => { measure(); }, [measure, full]);
+  useEffect(() => {
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  return (
+    <div className={`bseg${full ? " full" : ""}`} style={style} ref={ref}>
+      <span className="bseg-thumb" style={{ transform: `translate(${thumb.left}px, ${thumb.top}px)`, width: thumb.width, height: thumb.height }} />
+      <button data-k="chap" className={branch === "chap" ? "on" : ""} onClick={() => onSelect("chap")}>Чапаевская</button>
+      <button data-k="nekr" className={branch === "nekr" ? "on" : ""} onClick={() => onSelect("nekr")}>Некрасовская</button>
+    </div>
+  );
+}
+
+/** Переключатель категорий витрины с тем же «резиновым» ползунком,
+ *  что и у филиалов: пилюля едет и подстраивается под ширину активной кнопки. */
+function TabSeg({ tab, onSelect }: { tab: TabKey; onSelect: (t: TabKey) => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [thumb, setThumb] = useState({ left: 0, top: 0, width: 0, height: 0 });
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const a = el.querySelector<HTMLButtonElement>(`button[data-k="${tab}"]`);
+    if (a) setThumb({ left: a.offsetLeft, top: a.offsetTop, width: a.offsetWidth, height: a.offsetHeight });
+  }, [tab]);
+
+  useIso(() => { measure(); }, [measure]);
+  useEffect(() => {
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  const items: [TabKey, string][] = [["desserts", "Десерты"], ["kitchen", "Сытная кухня"], ["drinks", "Напитки"]];
+
+  return (
+    <div className="bseg" ref={ref}>
+      <span className="bseg-thumb" style={{ transform: `translate(${thumb.left}px, ${thumb.top}px)`, width: thumb.width, height: thumb.height }} />
+      {items.map(([k, label]) => (
+        <button key={k} data-k={k} className={tab === k ? "on" : ""} onClick={() => onSelect(k)}>{label}</button>
+      ))}
+    </div>
+  );
+}
+
+/** Пункты навигации (вынесены наружу — стабильная идентичность,
+ *  чтобы при ререндере не перемонтировались и не проигрывали анимацию заново). */
+function NavLinks({ onGo }: { onGo: (id: string) => void }) {
+  return (
+    <>
+      <a onClick={() => onGo("menu")}>Витрина</a>
+      <a onClick={() => onGo("preorder")}>Предзаказ</a>
+      <a onClick={() => onGo("gift")}>Сертификаты</a>
+      <a onClick={() => onGo("team")}>Команда</a>
+      <a onClick={() => onGo("contacts")}>Контакты</a>
+    </>
+  );
+}
+
 /* ---------- icons ---------- */
 
 const IconDog = () => (
@@ -45,6 +138,12 @@ const IconLeaf = () => (
 );
 const IconPin = ({ s = 16 }: { s?: number }) => (
   <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 4.4-8 12-8 12s-8-7.6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>
+);
+const IconMenu = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M3 12h18M3 18h18" /></svg>
+);
+const IconClose = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
 );
 const IconQr = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4" /></svg>
@@ -84,10 +183,52 @@ export default function MuwaSite() {
 
   const B = BRANCHES[branch];
 
+  const cartBtnRef = useRef<HTMLButtonElement>(null);
+
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
   }, []);
+
+  /** «Частичка» летит по дуге от кнопки товара к иконке заказа в шапке. */
+  const flyToCart = useCallback((sourceEl: HTMLElement) => {
+    const cartEl = cartBtnRef.current;
+    if (!cartEl) return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+
+    const from = sourceEl.getBoundingClientRect();
+    const to = cartEl.getBoundingClientRect();
+    const startX = from.left + from.width / 2;
+    const startY = from.top + from.height / 2;
+    const dx = to.left + to.width / 2 - startX;
+    const dy = to.top + to.height / 2 - startY;
+
+    const dot = document.createElement("span");
+    dot.className = "fly-dot";
+    dot.style.left = `${startX}px`;
+    dot.style.top = `${startY}px`;
+    document.body.appendChild(dot);
+
+    const anim = dot.animate(
+      [
+        { transform: "translate(-50%,-50%) scale(1)", opacity: 1, offset: 0 },
+        { transform: `translate(calc(-50% + ${dx * 0.5}px), calc(-50% + ${dy * 0.5 - 70}px)) scale(1.15)`, opacity: 1, offset: 0.6 },
+        { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(.3)`, opacity: 0.35, offset: 1 },
+      ],
+      { duration: 620, easing: "cubic-bezier(0.22,0.61,0.36,1)", fill: "forwards" }
+    );
+    anim.onfinish = () => {
+      dot.remove();
+      cartEl.classList.add("bump");
+      setTimeout(() => cartEl.classList.remove("bump"), 320);
+    };
+  }, []);
+
+  /** Добавление из витрины: кладём в корзину и запускаем полёт частички. */
+  const addFromMenu = useCallback((e: React.MouseEvent, id: string) => {
+    addCart(id);
+    flyToCart(e.currentTarget as HTMLElement);
+  }, [addCart, flyToCart]);
   const decCart = useCallback((id: string) => {
     setCart((c) => {
       const n = { ...c };
@@ -167,49 +308,29 @@ export default function MuwaSite() {
     }
   };
 
-  const branchCls = (k: BranchKey) => (branch === k ? "on" : "");
-  const tabCls = (k: TabKey) => (tab === k ? "on" : "");
-
   const cartStepTitle = useMemo(() => ({
     cart: "Твоя корзина", contacts: "Контакты", pay: "Оплата", done: "Готово",
   }[cartStep]), [cartStep]);
-
-  const NavLinks = () => (
-    <>
-      <a onClick={() => go("menu")}>Витрина</a>
-      <a onClick={() => go("preorder")}>Предзаказ</a>
-      <a onClick={() => go("gift")}>Сертификаты</a>
-      <a onClick={() => go("team")}>Команда</a>
-      <a onClick={() => go("contacts")}>Контакты</a>
-    </>
-  );
-
-  const BranchSeg = ({ style }: { style?: React.CSSProperties }) => (
-    <div className="seg" style={style}>
-      <button className={branchCls("chap")} onClick={() => setBranch("chap")}>Чапаевская</button>
-      <button className={branchCls("nekr")} onClick={() => setBranch("nekr")}>Некрасовская</button>
-    </div>
-  );
 
   return (
     <>
       {/* ===== NAV ===== */}
       <div className="nav">
         <div className="wrapc nav-in">
-          <img src="/assets/muwa-logo.webp" width={46} height={46} style={{ borderRadius: 12 }} alt="MUWA" />
-          <nav className="nav-links"><NavLinks /></nav>
+          <Logo size={46} radius={12} />
+          <nav className="nav-links"><NavLinks onGo={go} /></nav>
           <div className="nav-right">
-            <BranchSeg />
-            <button className="cartbtn" onClick={openCart}>
+            <BranchSeg branch={branch} onSelect={setBranch} />
+            <button className="cartbtn" ref={cartBtnRef} onClick={openCart}>
               Заказ{cartCount > 0 && <span className="cc">{cartCount}</span>}
             </button>
-            <button className="burger" onClick={() => setNavOpen((v) => !v)} aria-label="Меню">☰</button>
+            <button className={`burger${navOpen ? " open" : ""}`} onClick={() => setNavOpen((v) => !v)} aria-label="Меню">{navOpen ? <IconClose /> : <IconMenu />}</button>
           </div>
         </div>
         {navOpen && (
           <div className="nav-menu">
-            <NavLinks />
-            <BranchSeg style={{ marginTop: 14, alignSelf: "flex-start" }} />
+            <NavLinks onGo={go} />
+            <BranchSeg branch={branch} onSelect={setBranch} style={{ marginTop: 14, alignSelf: "flex-start" }} />
           </div>
         )}
       </div>
@@ -242,11 +363,7 @@ export default function MuwaSite() {
           <p className="eyebrow">Сегодня в Muwa · {B.addr}</p>
           <h2 className="h2">ВИТРИНА <b>ДНЯ</b></h2>
           <div className="tabbar">
-            <div className="seg">
-              <button className={tabCls("desserts")} onClick={() => setTab("desserts")}>Десерты</button>
-              <button className={tabCls("kitchen")} onClick={() => setTab("kitchen")}>Сытная кухня</button>
-              <button className={tabCls("drinks")} onClick={() => setTab("drinks")}>Напитки</button>
-            </div>
+            <TabSeg tab={tab} onSelect={setTab} />
             <span className="lead" style={{ fontSize: 14 }}>{TAB_HINTS[tab]}</span>
           </div>
           <div className="menu-grid">
@@ -268,10 +385,10 @@ export default function MuwaSite() {
                         <div className="qty">
                           <button onClick={() => decCart(p.id)}>−</button>
                           <span>{qty}</span>
-                          <button onClick={() => addCart(p.id)}>+</button>
+                          <button onClick={(e) => addFromMenu(e, p.id)}>+</button>
                         </div>
                       ) : (
-                        <button className="padd" onClick={() => addCart(p.id)}>+ В предзаказ</button>
+                        <button className="padd" onClick={(e) => addFromMenu(e, p.id)}>+ В предзаказ</button>
                       )}
                     </div>
                   </div>
@@ -423,7 +540,7 @@ export default function MuwaSite() {
           <h2 className="h2">ЗАХОДИ <b>В ГОСТИ</b></h2>
           <div className="contacts-grid" style={{ marginTop: 30 }}>
             <div>
-              <BranchSeg style={{ marginBottom: 18 }} />
+              <BranchSeg branch={branch} onSelect={setBranch} style={{ marginBottom: 18 }} />
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Адрес</span><b style={{ color: "var(--graphite-900)" }}>{B.addr}</b></div>
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Часы</span><span>Ежедневно 9:00–21:00</span></div>
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Телефон</span><span>+7 846 000-00-00</span></div>
@@ -448,7 +565,7 @@ export default function MuwaSite() {
           <div className="foot-grid">
             <div className="foot-col">
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-                <img src="/assets/muwa-logo.webp" width={42} height={42} style={{ borderRadius: 11 }} alt="MUWA" />
+                <Logo size={42} radius={11} />
                 <span className="cap" style={{ color: "rgba(251,247,240,.9)", fontSize: 13, lineHeight: 1.3 }}>Keep muwa<br />and save peace</span>
               </div>
               <p className="foot-legal">Кофейня-кондитерская MUWA · спешелти-кофе и домашние кондитерские изделия. Самара.</p>
@@ -495,10 +612,7 @@ export default function MuwaSite() {
                   {cartIds.length > 0 && (
                     <div style={{ marginTop: 22 }}>
                       <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>Филиал сборки</div>
-                      <div className="seg" style={{ display: "flex" }}>
-                        <button className={branchCls("chap")} style={{ flex: 1 }} onClick={() => setBranch("chap")}>Чапаевская</button>
-                        <button className={branchCls("nekr")} style={{ flex: 1 }} onClick={() => setBranch("nekr")}>Некрасовская</button>
-                      </div>
+                      <BranchSeg branch={branch} onSelect={setBranch} full style={{ width: "100%" }} />
                       <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", margin: "18px 0 10px" }}>Ко времени</div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {TIMES.map((t) => (
@@ -601,7 +715,7 @@ export default function MuwaSite() {
                   <div className="gift-card" style={{ aspectRatio: "1.9", textAlign: "left" }}>
                     <div className="gift-card-c" />
                     <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <img src="/assets/muwa-logo.webp" width={38} height={38} style={{ borderRadius: 10 }} alt="MUWA" />
+                      <Logo size={38} radius={10} />
                       <span className="cap" style={{ fontSize: 11 }}>Gift card</span>
                     </div>
                     <div className="gift-amt" style={{ fontSize: 40 }}>{priceLabel(giftAmount)}</div>
@@ -638,7 +752,7 @@ function GiftCardVisual({ amount, compact }: { amount: number; compact?: boolean
     <div className="gift-card" style={compact ? { aspectRatio: "1.9" } : undefined}>
       <div className="gift-card-c" />
       <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <img src="/assets/muwa-logo.webp" width={compact ? 38 : 42} height={compact ? 38 : 42} style={{ borderRadius: 10 }} alt="MUWA" />
+        <Logo size={compact ? 38 : 42} radius={10} />
         <span className="cap" style={{ fontSize: 12 }}>Gift card</span>
       </div>
       <div className="gift-amt" style={compact ? { fontSize: 44 } : undefined}>{priceLabel(amount)}</div>

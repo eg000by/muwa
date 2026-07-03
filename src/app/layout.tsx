@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     siteName: "Muwa",
     locale: "ru_RU",
     type: "website",
-    images: [{ url: "/assets/muwa-logo.webp", width: 150, height: 150, alt: "Muwa" }],
+    images: [{ url: "/assets/muwa-logo2.jpg", width: 150, height: 150, alt: "Muwa" }],
   },
   alternates: { canonical: SITE_URL },
 };
