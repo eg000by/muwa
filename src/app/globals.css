@@ -239,8 +239,11 @@ textarea.inp{resize:vertical;min-height:90px}
 .step-anim{animation:stepIn .28s var(--ease)}
 @keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 /* закрытие моб. меню */
-.nav-menu.closing{animation:navClose .22s var(--ease) forwards}
-@keyframes navClose{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-12px)}}
+.nav-menu.closing{animation:navClose .34s cubic-bezier(.4,0,.2,1) forwards;pointer-events:none}
+@keyframes navClose{from{opacity:1;transform:translateY(0) scaleY(1)}to{opacity:0;transform:translateY(-10px) scaleY(.97)}}
+/* пункты меню плавно расходятся вверх при закрытии, повторяя вход в обратную сторону */
+.nav-menu.closing>*{animation:navItemOut .3s cubic-bezier(.4,0,.2,1) forwards;animation-delay:0s}
+@keyframes navItemOut{from{opacity:1;transform:translateX(0)}to{opacity:0;transform:translateX(-10px)}}
 .dhead{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1.5px solid var(--border)}
 .dbody{flex:1;overflow-y:auto;padding:22px}
 .dfoot{border-top:1.5px solid var(--border);padding:18px 22px;background:#fff}

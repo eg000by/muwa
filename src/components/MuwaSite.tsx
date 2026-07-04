@@ -196,6 +196,24 @@ export default function MuwaSite() {
 
   const reduceMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+  // Пока открыта корзина или модалка сертификата — блокируем прокрутку фона.
+  // position:fixed вместо overflow:hidden, иначе iOS Safari всё равно скроллит
+  // страницу под оверлеем. Позицию скролла сохраняем и восстанавливаем.
+  useEffect(() => {
+    if (!cartOpen && !giftOpen) return;
+    const scrollY = window.scrollY;
+    const body = document.body;
+    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.width = "100%";
+    body.style.overflow = "hidden";
+    return () => {
+      Object.assign(body.style, prev);
+      window.scrollTo(0, scrollY);
+    };
+  }, [cartOpen, giftOpen]);
+
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -296,6 +314,8 @@ export default function MuwaSite() {
     closeNav();
     requestAnimationFrame(() => requestAnimationFrame(() => jump(id)));
   };
+  // «Заказать с собой»: с пустой корзиной ведём к витрине, иначе открываем корзину.
+  const orderToGo = () => (cartCount === 0 ? go("menu") : openCart());
 
   const okName = name.trim().length > 1;
   const okPhone = phone.trim().length >= 6;
@@ -386,7 +406,7 @@ export default function MuwaSite() {
               <h1 className="hero-title">KEEP MUWA<br /><b>&amp; SAVE</b> PEACE</h1>
               <p className="hero-lead">Душевный проект от бариста. Живая зелень, уютный лофт и безупречный вкус — заходи как к близким друзьям.</p>
               <div className="hero-ctas">
-                <a className="cta cta-red" onClick={openCart}>Заказать с собой →</a>
+                <a className="cta cta-red" onClick={orderToGo}>Заказать с собой →</a>
                 <a className="cta cta-out" onClick={() => go("menu")}>Что на витрине сегодня?</a>
               </div>
               <div className="hero-meta"><span className="hours-min">Сегодня 10:00–21:00</span></div>

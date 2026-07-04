@@ -12,6 +12,9 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  // iOS Safari сам оборачивает длинные числа (ИНН/ОГРНИП) в tel-ссылки,
+  // ломая гидрацию React. Отключаем авто-распознавание.
+  formatDetection: { telephone: false, email: false, address: false },
   title: "Muwa — кофейня-кондитерская в Самаре | Keep muwa and save peace",
   description:
     "Muwa — душевная кофейня-кондитерская в Самаре: спешелти-кофе, домашние десерты и сытная кухня. Предзаказ с собой, подарочные сертификаты. Чапаевская, 92 и Некрасовская, 2.",
