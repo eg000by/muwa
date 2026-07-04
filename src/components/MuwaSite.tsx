@@ -196,23 +196,47 @@ export default function MuwaSite() {
 
   const reduceMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-  // Пока открыта корзина или модалка сертификата — блокируем прокрутку фона.
-  // position:fixed вместо overflow:hidden, иначе iOS Safari всё равно скроллит
-  // страницу под оверлеем. Позицию скролла сохраняем и восстанавливаем.
-  useEffect(() => {
-    if (!cartOpen && !giftOpen) return;
-    const scrollY = window.scrollY;
-    const body = document.body;
-    const prev = { position: body.style.position, top: body.style.top, width: body.style.width, overflow: body.style.overflow };
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = "100%";
-    body.style.overflow = "hidden";
-    return () => {
-      Object.assign(body.style, prev);
-      window.scrollTo(0, scrollY);
+  // Пока открыт оверлей (корзина/сертификат), страница под ним не должна скроллиться.
+  // Нарочно НЕ трогаем position у body: смена его геометрии заставляет iOS Safari
+  // перерастеризовывать композитные слои секций — при закрытии мигают случайные блоки.
+  // Вместо этого: overflow:hidden (без сдвига layout) + запрет touch-скролла страницы,
+  // кроме прокручиваемых частей самого оверлея.
+  const overlayOpen = cartOpen || giftOpen;
+  useIso(() => {
+    if (!overlayOpen) return;
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    // Гасим инерционную прокрутку, если оверлей открыли «на лету»: overflow:hidden
+    // сам по себе не останавливает уже запущенный momentum в Safari.
+    window.scrollTo({ top: window.scrollY, behavior: "instant" });
+    // Пропускаем жест, только если он начался в реально прокручиваемой части
+    // оверлея (короткому списку скроллить нечего — iOS дёргал бы фон под ящиком).
+    // Идём вверх по вложенным контейнерам: в модалке сертификата .dbody не
+    // переполняется (скроллится сам .modal над ним) — проверки одного closest мало.
+    // Target жеста не меняется до touchend, поэтому решаем один раз на touchstart.
+    let allowTouch = false;
+    const onTouchStart = (e: TouchEvent) => {
+      allowTouch = false;
+      let el = e.target instanceof Element ? e.target : null;
+      while (el) {
+        const sc = el.closest(".dbody, .modal");
+        if (!sc) break;
+        if (sc.scrollHeight > sc.clientHeight) { allowTouch = true; break; }
+        el = sc.parentElement;
+      }
     };
-  }, [cartOpen, giftOpen]);
+    const onTouchMove = (e: TouchEvent) => {
+      if (!allowTouch) e.preventDefault();
+    };
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: false });
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [overlayOpen]);
 
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
@@ -272,7 +296,8 @@ export default function MuwaSite() {
   const cartCount = cartIds.reduce((s, id) => s + cart[id], 0);
   const total = cartIds.reduce((s, id) => s + (ALL_PRODUCTS[id] ? ALL_PRODUCTS[id].price * cart[id] : 0), 0);
 
-  const products = PRODUCTS[tab];
+  // Витрина зависит от филиала: часть позиций есть только в одном из них.
+  const products = PRODUCTS[tab].filter((p) => !p.branches || p.branches.includes(branch));
 
   // Закрытие моб. меню с анимацией: держим блок смонтированным до конца
   // анимации navClose (или сразу, если у пользователя reduce-motion).
@@ -285,9 +310,16 @@ export default function MuwaSite() {
 
   const openCart = () => {
     closeNav();
+    // Пустая корзина: не показываем пустой ящик, а ведём к выбору блюд.
+    if (cartCount === 0 && !orderNum) {
+      go("menu");
+      return;
+    }
     setCartClosing(false);
     setCartOpen(true);
-    if (orderNum) setCartStep("cart");
+    // Если заказ уже оформлен — показываем экран с номером и QR (его предъявляют
+    // на баре), а не редактирование корзины. «Новый заказ» оттуда сбросит всё.
+    if (orderNum) setCartStep("done");
   };
   // Закрытие корзины с анимацией выезда; afterCartClose — что сделать после.
   const closeCart = () => {
@@ -378,10 +410,15 @@ export default function MuwaSite() {
       {/* ===== NAV ===== */}
       <div className="nav">
         <div className="wrapc nav-in">
-          <Logo size={46} radius={12} />
+          <a
+            className="logo-top"
+            aria-label="Наверх"
+            onClick={() => { closeNav(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          >
+            <Logo size={46} radius={12} />
+          </a>
           <nav className="nav-links"><NavLinks onGo={go} /></nav>
           <div className="nav-right">
-            <BranchSeg branch={branch} onSelect={setBranch} />
             <button className="cartbtn" ref={cartBtnRef} onClick={openCart} aria-label="Заказ">
               <IconCart />{cartCount > 0 && <span className="cc">{cartCount}</span>}
             </button>
@@ -391,7 +428,6 @@ export default function MuwaSite() {
         {(navOpen || navClosing) && (
           <div className={`nav-menu${navClosing ? " closing" : ""}`} onAnimationEnd={(e) => { if (e.animationName === "navClose") setNavClosing(false); }}>
             <NavLinks onGo={go} />
-            <BranchSeg branch={branch} onSelect={setBranch} style={{ marginTop: 14, alignSelf: "flex-start" }} />
           </div>
         )}
       </div>
@@ -424,6 +460,7 @@ export default function MuwaSite() {
           <p className="eyebrow">Сегодня в Muwa · {B.addr}</p>
           <h2 className="h2">ВИТРИНА <b>ДНЯ</b></h2>
           <div className="tabbar">
+            <BranchSeg branch={branch} onSelect={setBranch} />
             <TabSeg tab={tab} onSelect={setTab} />
             <span className="lead" style={{ fontSize: 14 }}>{TAB_HINTS[tab]}</span>
           </div>

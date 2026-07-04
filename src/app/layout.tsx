@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Nunito, Oswald, Golos_Text } from "next/font/google";
 import "./globals.css";
 
@@ -9,6 +9,10 @@ const oswald = Oswald({ variable: "--f-oswald", subsets: ["latin", "cyrillic"], 
 const golos = Golos_Text({ variable: "--f-golos", subsets: ["latin", "cyrillic"], weight: ["400", "500", "600", "700"], display: "swap" });
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+// viewport-fit=cover — чтобы env(safe-area-inset-*) были доступны:
+// шапка подкладывает фон под статус-бар, кнопки ящика не прячутся за home-индикатор.
+export const viewport: Viewport = { viewportFit: "cover" };
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -34,7 +38,28 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ru" className={`${baloo.variable} ${oswald.variable} ${golos.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Safari восстанавливает скролл только после load (когда догрузятся фото):
+            видно верх страницы, затем прыжок. Восстанавливаем позицию сами — скрипт
+            в конце body выполняется до первой отрисовки, когда вся SSR-разметка уже
+            распарсена, а высота карточек фиксирована в CSS и от фото не зависит.
+            Сохраняем не только на pagehide: при выгрузке фоновой вкладки iOS его
+            не гарантирует, надёжный сигнал — visibilitychange→hidden. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{
+if("scrollRestoration" in history)history.scrollRestoration="manual";
+var save=function(){try{sessionStorage.setItem("muwa-y",String(scrollY))}catch(e){}};
+addEventListener("pagehide",save);
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="hidden")save()});
+if(location.hash)return;
+var y=+(sessionStorage.getItem("muwa-y")||0);
+if(y>0){var d=document.documentElement.style;d.scrollBehavior="auto";scrollTo(0,y);d.scrollBehavior=""}
+}catch(e){}})();`,
+          }}
+        />
+      </body>
     </html>
   );
 }
