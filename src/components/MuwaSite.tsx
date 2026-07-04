@@ -610,12 +610,12 @@ export default function MuwaSite() {
               {!hrSent ? (
                 <div style={{ background: "#fff", border: "1.5px solid var(--border)", borderRadius: 20, padding: 26, boxShadow: "var(--shadow-sm)" }}>
                   <div className="form2">
-                    <div className="field"><label>Имя</label><input className="inp" value={hr.name} onChange={(e) => setHr({ ...hr, name: e.target.value })} placeholder="Как тебя зовут" /></div>
-                    <div className="field"><label>Возраст</label><input className="inp" value={hr.age} onChange={(e) => setHr({ ...hr, age: e.target.value })} placeholder="18+" /></div>
+                    <div className="field"><label>Имя</label><input suppressHydrationWarning className="inp" value={hr.name} onChange={(e) => setHr({ ...hr, name: e.target.value })} placeholder="Как тебя зовут" /></div>
+                    <div className="field"><label>Возраст</label><input suppressHydrationWarning className="inp" value={hr.age} onChange={(e) => setHr({ ...hr, age: e.target.value })} placeholder="18+" /></div>
                   </div>
-                  <div className="field"><label>Соцсети или Telegram</label><input className="inp" value={hr.link} onChange={(e) => setHr({ ...hr, link: e.target.value })} placeholder="@username или ссылка" /></div>
-                  <div className="field"><label>Почему хочешь работать именно в Muwa?</label><textarea className="inp" value={hr.why} onChange={(e) => setHr({ ...hr, why: e.target.value })} placeholder="Пару слов от души" /></div>
-                  <div className="field"><label>Телефон для связи</label><input className="inp" value={hr.phone} onChange={(e) => setHr({ ...hr, phone: e.target.value })} placeholder="+7 ___ ___-__-__" /></div>
+                  <div className="field"><label>Соцсети или Telegram</label><input suppressHydrationWarning className="inp" value={hr.link} onChange={(e) => setHr({ ...hr, link: e.target.value })} placeholder="@username или ссылка" /></div>
+                  <div className="field"><label>Почему хочешь работать именно в Muwa?</label><textarea suppressHydrationWarning className="inp" value={hr.why} onChange={(e) => setHr({ ...hr, why: e.target.value })} placeholder="Пару слов от души" /></div>
+                  <div className="field"><label>Телефон для связи</label><input suppressHydrationWarning className="inp" value={hr.phone} onChange={(e) => setHr({ ...hr, phone: e.target.value })} placeholder="+7 ___ ___-__-__" /></div>
                   <button className="cta cta-red" style={{ width: "100%", marginTop: 6 }} disabled={hrDisabled || sendingHr} onClick={sendHr}>{sendingHr ? "Отправляем…" : "Отправить анкету →"}</button>
                 </div>
               ) : (
@@ -724,8 +724,8 @@ export default function MuwaSite() {
 
               {cartStep === "contacts" && (
                 <>
-                  <div className="field"><label>Имя</label><input className="inp" value={name} onChange={(e) => setName(e.target.value)} placeholder="Как тебя зовут" /></div>
-                  <div className="field"><label>Телефон</label><input className="inp" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 ___ ___-__-__" /></div>
+                  <div className="field"><label>Имя</label><input suppressHydrationWarning className="inp" value={name} onChange={(e) => setName(e.target.value)} placeholder="Как тебя зовут" /></div>
+                  <div className="field"><label>Телефон</label><input suppressHydrationWarning className="inp" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+7 ___ ___-__-__" /></div>
                   <p className="lead" style={{ fontSize: 13, marginTop: 6 }}>Пришлём статус заказа в SMS. Заказ забираешь на {B.addr} — {time}.</p>
                 </>
               )}
@@ -803,10 +803,10 @@ export default function MuwaSite() {
                     ))}
                   </div>
                   <div className="form2">
-                    <div className="field"><label>Кому (email/телефон)</label><input className="inp" value={gTo} onChange={(e) => setGTo(e.target.value)} placeholder="получатель" /></div>
-                    <div className="field"><label>От кого</label><input className="inp" value={gFrom} onChange={(e) => setGFrom(e.target.value)} placeholder="твоё имя" /></div>
+                    <div className="field"><label>Кому (email/телефон)</label><input suppressHydrationWarning className="inp" value={gTo} onChange={(e) => setGTo(e.target.value)} placeholder="получатель" /></div>
+                    <div className="field"><label>От кого</label><input suppressHydrationWarning className="inp" value={gFrom} onChange={(e) => setGFrom(e.target.value)} placeholder="твоё имя" /></div>
                   </div>
-                  <div className="field"><label>Тёплое пожелание</label><textarea className="inp" value={gWish} onChange={(e) => setGWish(e.target.value)} placeholder="Пару слов от души" /></div>
+                  <div className="field"><label>Тёплое пожелание</label><textarea suppressHydrationWarning className="inp" value={gWish} onChange={(e) => setGWish(e.target.value)} placeholder="Пару слов от души" /></div>
                   <button className="cta cta-red" style={{ width: "100%", marginTop: 6 }} disabled={!giftOk || buyingGift} onClick={payGift}>{buyingGift ? "Оплата…" : `Оплатить ${priceLabel(giftAmount)} →`}</button>
                   <p className="lead" style={{ fontSize: 12, marginTop: 12, textAlign: "center" }}>СБП · T-Pay · демо-оплата</p>
                 </>
