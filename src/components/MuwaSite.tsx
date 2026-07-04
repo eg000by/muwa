@@ -145,6 +145,12 @@ const IconMenu = () => (
 const IconClose = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
 );
+const IconCart = ({ s = 20 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>
+);
+const IconBagAdd = ({ s = 18 }: { s?: number }) => (
+  <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><path d="M3 6h18" /><path d="M12 10.5v5M9.5 13h5" /></svg>
+);
 const IconQr = () => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3M21 14v.01M14 21h.01M17 21h4v-4" /></svg>
 );
@@ -159,8 +165,10 @@ export default function MuwaSite() {
   const [tab, setTab] = useState<TabKey>("desserts");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [navOpen, setNavOpen] = useState(false);
+  const [navClosing, setNavClosing] = useState(false);
 
   const [cartOpen, setCartOpen] = useState(false);
+  const [cartClosing, setCartClosing] = useState(false);
   const [cartStep, setCartStep] = useState<CartStep>("cart");
   const [time, setTime] = useState(TIMES[0]);
   const [name, setName] = useState("");
@@ -184,6 +192,9 @@ export default function MuwaSite() {
   const B = BRANCHES[branch];
 
   const cartBtnRef = useRef<HTMLButtonElement>(null);
+  const afterCartClose = useRef<(() => void) | null>(null);
+
+  const reduceMotion = () => typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
@@ -245,17 +256,44 @@ export default function MuwaSite() {
 
   const products = PRODUCTS[tab];
 
-  const openCart = () => {
+  // Закрытие моб. меню с анимацией: держим блок смонтированным до конца
+  // анимации navClose (или сразу, если у пользователя reduce-motion).
+  const closeNav = () => {
+    if (!navOpen) return;
+    if (reduceMotion()) { setNavOpen(false); return; }
+    setNavClosing(true);
     setNavOpen(false);
+  };
+
+  const openCart = () => {
+    closeNav();
+    setCartClosing(false);
     setCartOpen(true);
     if (orderNum) setCartStep("cart");
   };
-  const closeCart = () => setCartOpen(false);
+  // Закрытие корзины с анимацией выезда; afterCartClose — что сделать после.
+  const closeCart = () => {
+    if (reduceMotion()) {
+      setCartOpen(false);
+      afterCartClose.current?.();
+      afterCartClose.current = null;
+      return;
+    }
+    setCartClosing(true);
+  };
+  const onDrawerAnimEnd = (e: React.AnimationEvent) => {
+    if (e.animationName === "drawerOut" || e.animationName === "drawerDown") {
+      setCartOpen(false);
+      setCartClosing(false);
+      afterCartClose.current?.();
+      afterCartClose.current = null;
+    }
+  };
 
   const go = (id: string) => {
     // Сначала закрываем моб. меню, затем скроллим на следующих кадрах —
     // иначе позиция считается, пока раскрытое меню ещё занимает высоту.
-    setNavOpen(false);
+    closeNav();
     requestAnimationFrame(() => requestAnimationFrame(() => jump(id)));
   };
 
@@ -278,11 +316,14 @@ export default function MuwaSite() {
   };
 
   const newOrder = () => {
-    setCart({});
-    setCartStep("cart");
-    setName(""); setPhone("");
-    setOrderNum(null);
-    setCartOpen(false);
+    const reset = () => {
+      setCart({}); setCartStep("cart"); setName(""); setPhone(""); setOrderNum(null);
+    };
+    if (reduceMotion()) { setCartOpen(false); reset(); return; }
+    // Сброс состояния после завершения анимации закрытия — чтобы «done»-экран
+    // не мигнул пустой корзиной во время выезда.
+    afterCartClose.current = reset;
+    setCartClosing(true);
   };
 
   const giftOk = gTo.trim().length > 2;
@@ -321,14 +362,14 @@ export default function MuwaSite() {
           <nav className="nav-links"><NavLinks onGo={go} /></nav>
           <div className="nav-right">
             <BranchSeg branch={branch} onSelect={setBranch} />
-            <button className="cartbtn" ref={cartBtnRef} onClick={openCart}>
-              Заказ{cartCount > 0 && <span className="cc">{cartCount}</span>}
+            <button className="cartbtn" ref={cartBtnRef} onClick={openCart} aria-label="Заказ">
+              <IconCart />{cartCount > 0 && <span className="cc">{cartCount}</span>}
             </button>
-            <button className={`burger${navOpen ? " open" : ""}`} onClick={() => setNavOpen((v) => !v)} aria-label="Меню">{navOpen ? <IconClose /> : <IconMenu />}</button>
+            <button className={`burger${navOpen ? " open" : ""}`} onClick={() => (navOpen ? closeNav() : setNavOpen(true))} aria-label="Меню">{navOpen ? <IconClose /> : <IconMenu />}</button>
           </div>
         </div>
-        {navOpen && (
-          <div className="nav-menu">
+        {(navOpen || navClosing) && (
+          <div className={`nav-menu${navClosing ? " closing" : ""}`} onAnimationEnd={(e) => { if (e.animationName === "navClose") setNavClosing(false); }}>
             <NavLinks onGo={go} />
             <BranchSeg branch={branch} onSelect={setBranch} style={{ marginTop: 14, alignSelf: "flex-start" }} />
           </div>
@@ -348,7 +389,7 @@ export default function MuwaSite() {
                 <a className="cta cta-red" onClick={openCart}>Заказать с собой →</a>
                 <a className="cta cta-out" onClick={() => go("menu")}>Что на витрине сегодня?</a>
               </div>
-              <div className="hero-meta"><span className="hours-min">Сегодня 9:00–21:00</span></div>
+              <div className="hero-meta"><span className="hours-min">Сегодня 10:00–21:00</span></div>
             </div>
             <div className="hero-r">
               <HeroImage img={B.hero} />
@@ -378,7 +419,6 @@ export default function MuwaSite() {
                   <div className="pbody">
                     <h3 className="pname">{p.name}</h3>
                     <p className="pdesc">{p.desc}</p>
-                    <p className="pkbzhu">{p.kbzhu}</p>
                     <div className="pfoot">
                       <span className="pprice">{priceLabel(p.price)}</span>
                       {qty > 0 ? (
@@ -388,7 +428,7 @@ export default function MuwaSite() {
                           <button onClick={(e) => addFromMenu(e, p.id)}>+</button>
                         </div>
                       ) : (
-                        <button className="padd" onClick={(e) => addFromMenu(e, p.id)}>+ В предзаказ</button>
+                        <button className="padd" onClick={(e) => addFromMenu(e, p.id)} aria-label="Добавить в предзаказ"><IconBagAdd s={17} /></button>
                       )}
                     </div>
                   </div>
@@ -542,10 +582,10 @@ export default function MuwaSite() {
             <div>
               <BranchSeg branch={branch} onSelect={setBranch} style={{ marginBottom: 18 }} />
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Адрес</span><b style={{ color: "var(--graphite-900)" }}>{B.addr}</b></div>
-              <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Часы</span><span>Ежедневно 9:00–21:00</span></div>
+              <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Часы</span><span>Ежедневно 10:00–21:00</span></div>
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Телефон</span><span>+7 846 000-00-00</span></div>
               <div className="addr-row" style={{ borderBottom: "none" }}><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Рядом</span><span>{B.near}</span></div>
-              <div className="socials"><a className="soc">ВКонтакте</a><a className="soc">Telegram</a></div>
+              <div className="socials"><a className="soc">Инстаграм</a><a className="soc">Telegram</a></div>
               <div style={{ marginTop: 20 }}><a className="cta cta-out cta-sm" onClick={openCart}>Заказать с собой</a></div>
             </div>
             <div className="map">
@@ -570,8 +610,8 @@ export default function MuwaSite() {
               </div>
               <p className="foot-legal">Кофейня-кондитерская MUWA · спешелти-кофе и домашние кондитерские изделия. Самара.</p>
             </div>
-            <div className="foot-col"><div className="foot-h">Адреса</div><a className="foot-link">Чапаевская, 92</a><a className="foot-link">Некрасовская, 2</a><span className="foot-legal" style={{ margin: 0 }}>Ежедневно 9:00–21:00</span></div>
-            <div className="foot-col"><div className="foot-h">Контакты</div><a className="foot-link">+7 846 000-00-00</a><a className="foot-link">hello@muwa.coffee</a><div style={{ display: "flex", gap: 10, marginTop: 8 }}><a className="soc" style={{ borderColor: "rgba(255,255,255,.25)", color: "rgba(251,247,240,.85)", padding: "7px 12px" }}>ВКонтакте</a><a className="soc" style={{ borderColor: "rgba(255,255,255,.25)", color: "rgba(251,247,240,.85)", padding: "7px 12px" }}>Telegram</a></div></div>
+            <div className="foot-col"><div className="foot-h">Адреса</div><a className="foot-link">Чапаевская, 92</a><a className="foot-link">Некрасовская, 2</a><span className="foot-legal" style={{ margin: 0 }}>Ежедневно 10:00–21:00</span></div>
+            <div className="foot-col"><div className="foot-h">Контакты</div><a className="foot-link">+7 846 000-00-00</a><a className="foot-link">hello@muwa.coffee</a><div style={{ display: "flex", gap: 10, marginTop: 8 }}><a className="soc" style={{ borderColor: "rgba(255,255,255,.25)", color: "rgba(251,247,240,.85)", padding: "7px 12px" }}>Инстаграм</a><a className="soc" style={{ borderColor: "rgba(255,255,255,.25)", color: "rgba(251,247,240,.85)", padding: "7px 12px" }}>Telegram</a></div></div>
             <div className="foot-col"><div className="foot-h">Документы</div><a className="foot-link">Публичная оферта</a><a className="foot-link">Политика конфиденциальности</a><a className="foot-link">Согласие на обработку ПДн</a><a className="foot-link">Оплата и возврат</a></div>
           </div>
           <div className="foot-bottom">
@@ -583,8 +623,8 @@ export default function MuwaSite() {
 
       {/* ===== CART DRAWER ===== */}
       {cartOpen && (
-        <div className="ov" onClick={closeCart}>
-          <div className="drawer" onClick={(e) => e.stopPropagation()}>
+        <div className={`ov${cartClosing ? " closing" : ""}`} onClick={closeCart}>
+          <div className="drawer" onClick={(e) => e.stopPropagation()} onAnimationEnd={onDrawerAnimEnd}>
             <div className="dhead">
               <div>
                 <div className="cap" style={{ fontSize: 10.5, color: "var(--accent)" }}>Предзаказ · {B.addr}</div>
@@ -594,6 +634,7 @@ export default function MuwaSite() {
             </div>
 
             <div className="dbody">
+              <div className="step-anim" key={cartStep}>
               {cartStep === "cart" && (
                 <>
                   {cartIds.length === 0 && <div className="emptycart">Корзина пока пустая.<br />Загляни в витрину дня ↑</div>}
@@ -655,6 +696,7 @@ export default function MuwaSite() {
                   <p className="lead" style={{ fontSize: 13, marginTop: 12 }}>{B.addr} · {time}<br />Бариста получил заказ в Telegram ☕</p>
                 </div>
               )}
+              </div>
             </div>
 
             <div className="dfoot">
@@ -665,7 +707,10 @@ export default function MuwaSite() {
                 </>
               )}
               {cartStep === "contacts" && (
-                <button className="cta cta-red" style={{ width: "100%" }} disabled={!(okName && okPhone)} onClick={() => setCartStep("pay")}>Далее → оплата</button>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button className="cta cta-out" onClick={() => setCartStep("cart")}>← Назад</button>
+                  <button className="cta cta-red" style={{ flex: 1 }} disabled={!(okName && okPhone)} onClick={() => setCartStep("pay")}>Далее → оплата</button>
+                </div>
               )}
               {cartStep === "pay" && (
                 <button className="cta cta-out" style={{ width: "100%" }} onClick={() => setCartStep("contacts")}>← Назад</button>
@@ -690,6 +735,7 @@ export default function MuwaSite() {
               <button className="xbtn" onClick={() => setGiftOpen(false)}>×</button>
             </div>
             <div className="dbody">
+              <div className="step-anim" key={giftStep}>
               {giftStep === "form" ? (
                 <>
                   <GiftCardVisual amount={giftAmount} compact />
@@ -725,6 +771,7 @@ export default function MuwaSite() {
                   <button className="cta cta-out" style={{ width: "100%", marginTop: 18 }} onClick={() => setGiftOpen(false)}>Готово</button>
                 </div>
               )}
+              </div>
             </div>
           </div>
         </div>

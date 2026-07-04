@@ -32,7 +32,7 @@ function jsonLd() {
     openingHoursSpecification: {
       "@type": "OpeningHoursSpecification",
       dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
-      opens: "09:00",
+      opens: "10:00",
       closes: "21:00",
     },
     url: SITE_URL,

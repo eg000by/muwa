@@ -62,7 +62,14 @@ section[id]{scroll-margin-top:80px}
 .h2{font-family:var(--font-accent);font-weight:300;text-transform:uppercase;letter-spacing:.02em;font-size:52px;line-height:.96;color:var(--graphite-900);margin:0}
 .h2 b{color:var(--accent);font-weight:300}
 .lead{font-size:17px;line-height:1.55;color:var(--text-secondary)}
-.sec{padding:74px 0}
+/* Секции-«плашки»: каждая наезжает на предыдущую скруглённым верхом, с мягкой
+   тенью на стыке и проступающей фирменной контурной линией Мувы сверху. */
+.sec{position:relative;isolation:isolate;padding:74px 0;background:var(--bg-page);border-radius:var(--r-xl) var(--r-xl) 0 0;margin-top:-30px;overflow:hidden;box-shadow:0 -12px 30px rgba(30,28,27,.06)}
+/* фирменные контурные линии в верхней зоне плашки — только на мобилке
+   (на десктопе их почти не видно за контентом, поэтому отключены) */
+.sec::before,.foot::before{content:"";display:none;position:absolute;top:0;left:0;right:0;height:210px;-webkit-mask:url(/assets/contour.svg) center top/155% no-repeat;mask:url(/assets/contour.svg) center top/155% no-repeat;background:var(--accent);opacity:.09;pointer-events:none;z-index:0}
+.cc-sec::before,.foot::before{background:var(--red-300);opacity:.12}
+.sec>.wrapc{position:relative;z-index:1}
 
 /* buttons */
 .cta{display:inline-flex;align-items:center;justify-content:center;gap:9px;font-family:var(--font-body);font-weight:700;font-size:16px;padding:14px 24px;border-radius:16px;cursor:pointer;border:2.5px solid transparent;text-decoration:none;transition:transform .12s var(--ease),background .2s var(--ease),box-shadow .2s var(--ease)}
@@ -78,8 +85,8 @@ section[id]{scroll-margin-top:80px}
 .nav-links{display:flex;gap:24px;margin-left:14px;font-family:var(--font-accent);font-weight:300;text-transform:uppercase;letter-spacing:.12em;font-size:14px;color:var(--text-secondary)}
 .nav-links a{text-decoration:none;cursor:pointer}.nav-links a:hover{color:var(--accent)}
 .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
-.cartbtn{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--graphite-900);color:var(--cream-050);border:none;font-family:var(--font-body);font-weight:700;font-size:14px;padding:11px 16px;border-radius:14px;cursor:pointer}
-.cartbtn .cc{background:var(--accent);color:#fff;border-radius:999px;min-width:20px;height:20px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.cartbtn{position:relative;display:inline-flex;align-items:center;justify-content:center;background:var(--graphite-900);color:var(--cream-050);border:none;padding:10px 12px;border-radius:13px;cursor:pointer}
+.cartbtn .cc{position:absolute;top:-6px;right:-6px;background:var(--accent);color:#fff;border-radius:999px;min-width:19px;height:19px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;box-shadow:0 0 0 2px var(--cream-050)}
 .cartbtn.bump{animation:cartBump .32s var(--ease-bounce)}
 @keyframes cartBump{0%{transform:scale(1)}40%{transform:scale(1.18)}100%{transform:scale(1)}}
 
@@ -104,7 +111,7 @@ section[id]{scroll-margin-top:80px}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--plant);box-shadow:0 0 0 3px rgba(78,122,75,.2)}
 
 /* hero */
-.hero{position:relative;overflow:hidden}
+.hero{position:relative;isolation:isolate;overflow:hidden;padding-bottom:32px}
 .hero-bg{position:absolute;inset:0;color:var(--accent);opacity:.09;-webkit-mask:url(/assets/contour.svg) center/130% no-repeat;mask:url(/assets/contour.svg) center/130% no-repeat;background:currentColor;pointer-events:none}
 .hero .wrapc{position:relative;z-index:1}
 .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;min-height:560px}
@@ -127,12 +134,12 @@ section[id]{scroll-margin-top:80px}
 .pimg-l{position:relative;font-family:var(--font-accent);font-weight:300;text-transform:uppercase;letter-spacing:.16em;font-size:12px;color:var(--graphite-400)}
 .ptag{position:absolute;left:12px;top:12px;background:var(--accent);color:#fff;font-family:var(--font-accent);font-weight:300;text-transform:uppercase;letter-spacing:.12em;font-size:11px;padding:5px 11px;border-radius:999px}
 .pbody{padding:16px 18px 18px;display:flex;flex-direction:column;flex:1}
-.pname{font-size:17px;font-weight:700;color:var(--graphite-900);margin:0}
-.pdesc{font-size:14px;line-height:1.45;color:var(--text-secondary);margin:6px 0 0}
-.pkbzhu{font-size:12px;color:var(--text-muted);margin:9px 0 0}
-.pfoot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px dotted var(--border-strong)}
+.pname{font-size:17px;font-weight:700;color:var(--graphite-900);margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* описание всегда занимает 2 строки — карточки одной высоты во всех категориях */
+.pdesc{font-size:14px;line-height:1.45;color:var(--text-secondary);margin:6px 0 0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
+.pfoot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:14px;border-top:1px dotted var(--border-strong)}
 .pprice{font-size:20px;font-weight:700;color:var(--accent)}
-.padd{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;background:var(--graphite-900);color:var(--cream-050);border:none;font-family:var(--font-body);font-weight:700;font-size:13px;padding:0 14px;border-radius:12px;cursor:pointer;transition:transform .12s}
+.padd{display:inline-flex;align-items:center;justify-content:center;height:34px;background:var(--graphite-900);color:var(--cream-050);border:none;padding:0 12px;border-radius:12px;cursor:pointer;transition:transform .12s}
 .padd:active{transform:scale(.95)}
 /* превращение «+ В предзаказ» в счётчик: счётчик плавно «вырастает» на месте кнопки */
 .pfoot .qty{animation:qtyIn .26s var(--ease);transform-origin:right center}
@@ -205,7 +212,8 @@ textarea.inp{resize:vertical;min-height:90px}
 .soc:hover{border-color:var(--accent);color:var(--accent)}
 
 /* footer */
-.foot{background:var(--graphite-900);color:rgba(251,247,240,.7);padding:48px 0 26px}
+.foot{position:relative;isolation:isolate;background:var(--graphite-900);color:rgba(251,247,240,.7);padding:48px 0 26px;border-radius:var(--r-xl) var(--r-xl) 0 0;margin-top:-30px;overflow:hidden;box-shadow:0 -12px 30px rgba(30,28,27,.06)}
+.foot .wrapc{position:relative;z-index:1}
 .foot-grid{display:grid;grid-template-columns:1.5fr 1fr 1fr 1.2fr;gap:28px;padding-bottom:26px;border-bottom:1px solid rgba(255,255,255,.12)}
 .foot-col{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
 .foot-h{font-family:var(--font-accent);font-weight:300;text-transform:uppercase;letter-spacing:.14em;font-size:12px;color:var(--red-300);margin-bottom:6px}
@@ -221,17 +229,30 @@ textarea.inp{resize:vertical;min-height:90px}
 @keyframes ovIn{from{opacity:0}to{opacity:1}}
 @keyframes drawerIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
 @keyframes drawerUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+/* закрытие корзины: оверлей гаснет, панель уезжает (вправо / вниз на мобилке) */
+.ov.closing{animation:ovOut .28s var(--ease) forwards}
+.ov.closing .drawer{animation:drawerOut .3s var(--ease) forwards}
+@keyframes ovOut{from{opacity:1}to{opacity:0}}
+@keyframes drawerOut{from{transform:translateX(0)}to{transform:translateX(100%)}}
+@keyframes drawerDown{from{transform:translateY(0)}to{transform:translateY(100%)}}
+/* смена шагов заказа/сертификата — плавное появление вместо резкой подмены */
+.step-anim{animation:stepIn .28s var(--ease)}
+@keyframes stepIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* закрытие моб. меню */
+.nav-menu.closing{animation:navClose .22s var(--ease) forwards}
+@keyframes navClose{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(-12px)}}
 .dhead{display:flex;align-items:center;justify-content:space-between;padding:20px 22px;border-bottom:1.5px solid var(--border)}
 .dbody{flex:1;overflow-y:auto;padding:22px}
 .dfoot{border-top:1.5px solid var(--border);padding:18px 22px;background:#fff}
 .xbtn{width:36px;height:36px;border-radius:10px;border:1.5px solid var(--border-strong);background:#fff;cursor:pointer;font-size:18px;line-height:1;color:var(--text-secondary)}
 .citem{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px dotted var(--border-strong)}
 .citem-img{width:56px;height:56px;border-radius:12px;background:var(--cream-100);flex:none;object-fit:cover}
-.qty{display:inline-flex;align-items:center;gap:0;height:34px;border:1.5px solid var(--border-strong);border-radius:10px;overflow:hidden}
+.qty{display:inline-flex;align-items:center;gap:0;height:34px;background:#fff;border:1.5px solid var(--border-strong);border-radius:10px;overflow:hidden}
 .qty button{width:30px;height:100%;border:none;background:#fff;cursor:pointer;font-size:16px;color:var(--graphite-800)}
 .qty span{min-width:30px;text-align:center;font-weight:700;font-size:14px}
-.chip{font-family:var(--font-body);font-weight:600;font-size:13px;padding:9px 14px;border-radius:999px;border:1.5px solid var(--border-strong);background:#fff;cursor:pointer;color:var(--text-secondary)}
-.chip.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip{font-family:var(--font-body);font-weight:600;font-size:13px;padding:9px 14px;border-radius:999px;border:1.5px solid var(--border-strong);background:#fff;cursor:pointer;color:var(--text-secondary);transition:background .2s var(--ease),border-color .2s var(--ease),color .2s var(--ease)}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent);animation:chipPop .3s var(--ease-bounce)}
+@keyframes chipPop{from{transform:scale(.78)}to{transform:scale(1)}}
 .modal{width:520px;max-width:100%;background:var(--cream-050);border-radius:22px;max-height:92vh;overflow-y:auto;margin:auto;box-shadow:var(--shadow-md)}
 .qr{width:150px;height:150px;border-radius:16px;border:2.5px solid var(--graphite-900);background:#fff;position:relative;display:flex;align-items:center;justify-content:center;margin:0 auto}
 .qr-c{position:absolute;inset:14px;color:var(--graphite-900);-webkit-mask:url(/assets/contour.svg) center/cover no-repeat;mask:url(/assets/contour.svg) center/cover no-repeat;background:currentColor}
@@ -254,11 +275,12 @@ textarea.inp{resize:vertical;min-height:90px}
 .nav-menu a:hover{color:var(--accent)}
 
 @media(prefers-reduced-motion:reduce){
-  .bseg-thumb,.burger,.nav-menu,.nav-menu>*,.cartbtn.bump,.pfoot .qty,.ov,.drawer{transition:none;animation:none}
+  .bseg-thumb,.burger,.nav-menu,.nav-menu>*,.cartbtn.bump,.pfoot .qty,.ov,.drawer,.chip.on,.step-anim{transition:none;animation:none}
 }
 
 @media(max-width:820px){
   .wrapc{padding:0 18px}
+  .sec::before,.foot::before{display:block}
   /* на телефоне шапку фиксируем: position:sticky иногда «отклеивается» при
      инерционном скролле (баг iOS/Android со sticky + backdrop-filter),
      из-за чего кнопка заказа уезжала за экран и полёт частички было не видно */
@@ -275,7 +297,11 @@ textarea.inp{resize:vertical;min-height:90px}
   .hero-l{padding:30px 0 6px}
   .hero-title{font-size:52px}
   .hero-r{min-height:300px;border-radius:18px}
-  .menu-grid{grid-template-columns:1fr 1fr}
+  /* на телефоне витрина — горизонтальная карусель со свайпом (десктоп: сетка) */
+  .menu-grid{display:flex;align-items:stretch;grid-template-columns:none;gap:14px;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scroll-padding:0 18px;margin:0 -18px;padding:2px 18px 8px;scrollbar-width:none}
+  .menu-grid::-webkit-scrollbar{display:none}
+  .menu-grid>.pcard{flex:0 0 80%;scroll-snap-align:start}
+  .menu-grid .pimg{height:220px}
   .gift-grid{grid-template-columns:1fr}
   .coffee-grid{grid-template-columns:1fr}
   .hr-grid{grid-template-columns:1fr;gap:26px}
@@ -283,11 +309,12 @@ textarea.inp{resize:vertical;min-height:90px}
   .map{height:240px}
   .foot-grid{grid-template-columns:1fr 1fr}
   .drawer{width:100%;animation-name:drawerUp}
+  .ov.closing .drawer{animation-name:drawerDown}
 }
 @media(max-width:520px){
   .hero-title{font-size:42px}
   .h2{font-size:32px}
-  .menu-grid{grid-template-columns:1fr}
+  .menu-grid>.pcard{flex-basis:86%}
   .steps{grid-template-columns:1fr}
   .phil-grid{grid-template-columns:1fr}
   .form2{grid-template-columns:1fr}
