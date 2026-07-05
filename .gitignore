@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# локальные данные (мок-стоп-лист YTimes и т.п.)
+/data

@@ -1,6 +1,4 @@
 // Данные витрины и филиалов Muwa.
-// На время демо — локальный типизированный модуль (без БД/Payload).
-// После одобрения проекта переедет в Payload CMS.
 
 export type TabKey = "desserts" | "kitchen" | "drinks";
 
@@ -15,6 +13,9 @@ export interface Product {
   tag?: string;
   /** В каких филиалах есть позиция. Нет поля — есть во всех. */
   branches?: BranchKey[];
+  /** GUID позиции в YTimes (для стоп-листа/наличия). Нет поля — наличием
+   *  из YTimes не управляется, считается доступной. Пока значения временные. */
+  ytimesGuid?: string;
 }
 
 export interface BranchInfo {
@@ -28,23 +29,23 @@ export type BranchKey = "chap" | "nekr";
 
 export const PRODUCTS: Record<TabKey, Product[]> = {
   desserts: [
-    { id: "cheese", name: "Чизкейк", desc: "Нежный ванильный крем и свежая голубика", price: 340, kbzhu: "≈340 ккал · Б7 Ж24 У22", img: "muwa-cheesecake.jpg", tag: "хит" },
-    { id: "malina", name: "Малиновый тарт", desc: "Песочная основа и свежая малина", price: 360, kbzhu: "≈360 ккал · Б6 Ж19 У40", img: "muwa-malina-tart.jpg", branches: ["chap"] },
-    { id: "moti", name: "Моти", desc: "Рисовое тесто с нежной начинкой", price: 220, kbzhu: "≈180 ккал · Б3 Ж6 У29", img: "muwa-moti.jpg", branches: ["nekr"] },
-    { id: "shokolad", name: "Шоколадный ломтик", desc: "Плотный шоколадный бисквит", price: 300, kbzhu: "≈380 ккал · Б7 Ж22 У36", img: "muwa-shokolad.jpg" },
-    { id: "bulochka", name: "Булочка с маком", desc: "Сдобная булочка с маковой начинкой", price: 180, kbzhu: "≈290 ккал · Б6 Ж10 У42", img: "muwa-bulochka-mak.jpg" },
+    { id: "cheese", name: "Чизкейк", desc: "Нежный ванильный крем и свежая голубика", price: 340, kbzhu: "≈340 ккал · Б7 Ж24 У22", img: "muwa-cheesecake.jpg", tag: "хит", ytimesGuid: "yt-cheese" },
+    { id: "malina", name: "Малиновый тарт", desc: "Песочная основа и свежая малина", price: 360, kbzhu: "≈360 ккал · Б6 Ж19 У40", img: "muwa-malina-tart.jpg", branches: ["chap"], ytimesGuid: "yt-malina" },
+    { id: "moti", name: "Моти", desc: "Рисовое тесто с нежной начинкой", price: 220, kbzhu: "≈180 ккал · Б3 Ж6 У29", img: "muwa-moti.jpg", branches: ["nekr"], ytimesGuid: "yt-moti" },
+    { id: "shokolad", name: "Шоколадный ломтик", desc: "Плотный шоколадный бисквит", price: 300, kbzhu: "≈380 ккал · Б7 Ж22 У36", img: "muwa-shokolad.jpg", ytimesGuid: "yt-shokolad" },
+    { id: "bulochka", name: "Булочка с маком", desc: "Сдобная булочка с маковой начинкой", price: 180, kbzhu: "≈290 ккал · Б6 Ж10 У42", img: "muwa-bulochka-mak.jpg", ytimesGuid: "yt-bulochka" },
   ],
   kitchen: [
-    { id: "kish", name: "Киш с беконом", desc: "Открытый пирог с беконом и заливкой", price: 340, kbzhu: "≈420 ккал · Б15 Ж27 У28", img: "muwa-kish-bekon.jpg", tag: "хит" },
-    { id: "galeta", name: "Галета с баклажаном", desc: "Хрустящее тесто, баклажан и томаты", price: 320, kbzhu: "≈380 ккал · Б10 Ж21 У36", img: "muwa-galeta-baklazhan.jpg", branches: ["nekr"] },
-    { id: "sandrost", name: "Сэндвич с ростбифом", desc: "Зерновой хлеб, сочный ростбиф, корнишоны и перец", price: 390, kbzhu: "≈480 ккал · Б26 Ж22 У40", img: "muwa-sandwich-rostbeef.jpg", tag: "новинка" },
-    { id: "sandchick", name: "Сэндвич с курицей", desc: "Гриль-тост с курицей, чеддером и томатом", price: 340, kbzhu: "≈440 ккал · Б24 Ж21 У38", img: "muwa-sandwich-chicken.jpg" },
-    { id: "pita", name: "Сытная пита", desc: "Тёплая пита с мясной начинкой и овощами", price: 350, kbzhu: "≈470 ккал · Б18 Ж20 У50", img: "muwa-pita2.jpg", branches: ["nekr"] },
-    { id: "humus", name: "Хумус с грибами", desc: "Нежный хумус, жареные грибы и тыквенные семечки, с питой", price: 330, kbzhu: "≈390 ккал · Б14 Ж22 У34", img: "muwa-humus.jpg", branches: ["chap"] },
+    { id: "kish", name: "Киш с беконом", desc: "Открытый пирог с беконом и заливкой", price: 340, kbzhu: "≈420 ккал · Б15 Ж27 У28", img: "muwa-kish-bekon.jpg", tag: "хит", ytimesGuid: "yt-kish" },
+    { id: "galeta", name: "Галета с баклажаном", desc: "Хрустящее тесто, баклажан и томаты", price: 320, kbzhu: "≈380 ккал · Б10 Ж21 У36", img: "muwa-galeta-baklazhan.jpg", branches: ["nekr"], ytimesGuid: "yt-galeta" },
+    { id: "sandrost", name: "Сэндвич с ростбифом", desc: "Зерновой хлеб, сочный ростбиф, корнишоны и перец", price: 390, kbzhu: "≈480 ккал · Б26 Ж22 У40", img: "muwa-sandwich-rostbeef.jpg", tag: "новинка", ytimesGuid: "yt-sandrost" },
+    { id: "sandchick", name: "Сэндвич с курицей", desc: "Гриль-тост с курицей, чеддером и томатом", price: 340, kbzhu: "≈440 ккал · Б24 Ж21 У38", img: "muwa-sandwich-chicken.jpg", ytimesGuid: "yt-sandchick" },
+    { id: "pita", name: "Сытная пита", desc: "Тёплая пита с мясной начинкой и овощами", price: 350, kbzhu: "≈470 ккал · Б18 Ж20 У50", img: "muwa-pita2.jpg", branches: ["nekr"], ytimesGuid: "yt-pita" },
+    { id: "humus", name: "Хумус с грибами", desc: "Нежный хумус, жареные грибы и тыквенные семечки, с питой", price: 330, kbzhu: "≈390 ккал · Б14 Ж22 У34", img: "muwa-humus.jpg", branches: ["chap"], ytimesGuid: "yt-humus" },
   ],
   drinks: [
-    { id: "grib", name: "Грибной латте", desc: "На чаге, мягкий и согревающий", price: 260, kbzhu: "на молоке по вкусу", img: "muwa-grib.jpg" },
-    { id: "filter", name: "Фильтр", desc: "Кофе недели, заварка V60", price: 250, kbzhu: "без сахара", img: "muwa-filtr.jpg", tag: "кофе недели" },
+    { id: "grib", name: "Грибной латте", desc: "На чаге, мягкий и согревающий", price: 260, kbzhu: "на молоке по вкусу", img: "muwa-grib.jpg", ytimesGuid: "yt-grib" },
+    { id: "filter", name: "Фильтр", desc: "Кофе недели, заварка V60", price: 250, kbzhu: "без сахара", img: "muwa-filtr.jpg", tag: "кофе недели", ytimesGuid: "yt-filter" },
   ],
 };
 

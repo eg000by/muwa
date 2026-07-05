@@ -5,7 +5,12 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
-      # Опционально (можно не задавать — тогда демо-режим, уведомления в лог):
-      # - TELEGRAM_BOT_TOKEN=xxx
-      # - TELEGRAM_CHAT_ID=xxx
+      # YTimes: без ключа — заглушка на data/mock-stoplist.json (см. .env.example)
+      # - YTIMES_API_KEY=xxx
+      # - YTIMES_SHOP_CHAP=xxx
+      # - YTIMES_SHOP_NEKR=xxx
+      # - YTIMES_MOCK=1
+    volumes:
+      # Персистентность мок-стоп-листа между рестартами контейнера (режим заглушки).
+      - ./data:/app/data
     restart: unless-stopped

@@ -1,7 +1,11 @@
 import MuwaSite from "@/components/MuwaSite";
 import { PRODUCTS } from "@/lib/menu";
+import { getSoldOutMap } from "@/lib/availability";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+// Наличие тянем из YTimes при каждом запросе — витрина сразу без раскупленного.
+export const dynamic = "force-dynamic";
 
 // Структурированные данные Schema.org для локального SEO (Яндекс/Google).
 function jsonLd() {
@@ -40,14 +44,15 @@ function jsonLd() {
   }));
 }
 
-export default function Home() {
+export default async function Home() {
+  const initialSoldOut = await getSoldOutMap();
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd()) }}
       />
-      <MuwaSite />
+      <MuwaSite initialSoldOut={initialSoldOut} />
     </>
   );
 }

@@ -160,9 +160,12 @@ const IconQr = () => (
 type CartStep = "cart" | "contacts" | "pay" | "done";
 type GiftStep = "form" | "done";
 
-export default function MuwaSite() {
+export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<BranchKey, string[]> }) {
   const [branch, setBranch] = useState<BranchKey>("chap");
   const [tab, setTab] = useState<TabKey>("desserts");
+  // Раскупленные позиции по филиалам (стоп-лист YTimes). Стартовое значение —
+  // с сервера, дальше подтягиваем опросом, чтобы открытая вкладка сама обновлялась.
+  const [soldOut, setSoldOut] = useState<Record<BranchKey, string[]>>(initialSoldOut);
   const [cart, setCart] = useState<Record<string, number>>({});
   const [navOpen, setNavOpen] = useState(false);
   const [navClosing, setNavClosing] = useState(false);
@@ -238,6 +241,32 @@ export default function MuwaSite() {
     };
   }, [overlayOpen]);
 
+  // Обновление наличия: опрашиваем /api/availability раз в ~30 сек и при
+  // возврате фокуса на вкладку, чтобы раскупленное исчезало без перезагрузки.
+  useEffect(() => {
+    let alive = true;
+    const pull = async () => {
+      try {
+        const res = await fetch("/api/availability", { cache: "no-store" });
+        if (!res.ok) return;
+        const data = (await res.json()) as Record<BranchKey, string[]>;
+        if (alive) setSoldOut(data);
+      } catch {
+        // сеть недоступна — оставляем прежнее наличие, попробуем в следующий тик
+      }
+    };
+    const id = setInterval(pull, 30_000);
+    const onFocus = () => { if (document.visibilityState === "visible") pull(); };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, []);
+
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
@@ -296,8 +325,11 @@ export default function MuwaSite() {
   const cartCount = cartIds.reduce((s, id) => s + cart[id], 0);
   const total = cartIds.reduce((s, id) => s + (ALL_PRODUCTS[id] ? ALL_PRODUCTS[id].price * cart[id] : 0), 0);
 
-  // Витрина зависит от филиала: часть позиций есть только в одном из них.
-  const products = PRODUCTS[tab].filter((p) => !p.branches || p.branches.includes(branch));
+  // Витрина зависит от филиала: часть позиций есть только в одном из них,
+  // плюс скрываем то, что сейчас в стоп-листе YTimes (закончилось в этой точке).
+  const products = PRODUCTS[tab].filter(
+    (p) => (!p.branches || p.branches.includes(branch)) && !soldOut[branch]?.includes(p.id)
+  );
 
   // Закрытие моб. меню с анимацией: держим блок смонтированным до конца
   // анимации navClose (или сразу, если у пользователя reduce-motion).
@@ -603,7 +635,7 @@ export default function MuwaSite() {
             <div>
               <p className="eyebrow">Хочу в команду</p>
               <h2 className="h2">ДАВАЙ <b>ЗНАКОМИТЬСЯ</b></h2>
-              <p className="lead" style={{ marginTop: 16 }}>Привет! Ищешь место, где ценят людей, а не сухие стандарты? Расскажи о себе — анкета сразу прилетит управляющему в Telegram.</p>
+              <p className="lead" style={{ marginTop: 16 }}>Привет! Ищешь место, где ценят людей, а не сухие стандарты? Расскажи о себе — и мы свяжемся с тобой в ближайшее время.</p>
               <img src="/assets/muwa-team.jpg" alt="Команда MUWA" style={{ width: "100%", maxWidth: 340, aspectRatio: "1/1", objectFit: "cover", objectPosition: "center 22%", borderRadius: 20, marginTop: 24, border: "1.5px solid var(--border)", boxShadow: "var(--shadow-md)" }} />
             </div>
             <div>
@@ -622,7 +654,7 @@ export default function MuwaSite() {
                 <div className="thanks">
                   <div className="thanks-ic">✓</div>
                   <h3 style={{ fontSize: 22, margin: "0 0 8px", color: "var(--graphite-900)" }}>Спасибо, {hr.name}!</h3>
-                  <p className="lead" style={{ fontSize: 15 }}>Анкета улетела управляющему в Telegram. Мы напишем тебе в ближайшее время ☕</p>
+                  <p className="lead" style={{ fontSize: 15 }}>Анкета отправлена. Мы напишем тебе в ближайшее время ☕</p>
                 </div>
               )}
             </div>
@@ -750,7 +782,7 @@ export default function MuwaSite() {
                   <div className="qr"><div className="qr-c" /></div>
                   <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 16 }}>Номер заказа</div>
                   <div className="ordernum">{orderNum}</div>
-                  <p className="lead" style={{ fontSize: 13, marginTop: 12 }}>{B.addr} · {time}<br />Бариста получил заказ в Telegram ☕</p>
+                  <p className="lead" style={{ fontSize: 13, marginTop: 12 }}>{B.addr} · {time}<br />Покажи номер заказа на баре ☕</p>
                 </div>
               )}
               </div>
