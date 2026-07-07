@@ -15,9 +15,21 @@ function jump(id: string) {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/** Фото с graceful-фолбэком на плейсхолдер «фото скоро». */
+/** Фото с graceful-фолбэком на плейсхолдер «фото скоро».
+ *  Пока картинка не декодировалась, под ней держим контурный плейсхолдер и
+ *  плавно проявляем фото по onLoad — при переключении категорий на месте фото
+ *  не остаётся пустоты. */
 function CardImage({ img, name }: { img?: string; name: string }) {
   const [err, setErr] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const ref = useRef<HTMLImageElement>(null);
+
+  // Кэшированное (в т.ч. предзагруженное) фото может быть готово ещё до навешивания
+  // onLoad — проверяем complete синхронно после монтирования/смены src.
+  useIso(() => {
+    if (ref.current?.complete && ref.current.naturalWidth > 0) setLoaded(true);
+  }, [img]);
+
   if (!img || err) {
     return (
       <>
@@ -26,7 +38,19 @@ function CardImage({ img, name }: { img?: string; name: string }) {
       </>
     );
   }
-  return <img src={`/assets/${img}`} alt={name} onError={() => setErr(true)} />;
+  return (
+    <>
+      {!loaded && <div className="pimg-c" />}
+      <img
+        ref={ref}
+        src={`/assets/${img}`}
+        alt={name}
+        className={`pimg-ph${loaded ? " on" : ""}`}
+        onLoad={() => setLoaded(true)}
+        onError={() => setErr(true)}
+      />
+    </>
+  );
 }
 
 /** Логотип: рамка фиксированного размера + зум внутрь картинки,
@@ -158,7 +182,7 @@ const IconQr = () => (
 /* ---------- component ---------- */
 
 type CartStep = "cart" | "contacts" | "pay" | "done";
-type GiftStep = "form" | "done";
+type GiftStep = "form" | "pay" | "done";
 
 export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<BranchKey, string[]> }) {
   const [branch, setBranch] = useState<BranchKey>("chap");
@@ -267,10 +291,39 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
     };
   }, []);
 
+  // Прогреваем кэш браузера фотографиями всей витрины один раз при загрузке,
+  // чтобы при переключении категорий картинки подтягивались из кэша мгновенно.
+  useEffect(() => {
+    Object.values(ALL_PRODUCTS).forEach((p) => {
+      if (p.img) {
+        const im = new window.Image();
+        im.src = `/assets/${p.img}`;
+      }
+    });
+  }, []);
+
   /* ---- cart ops ---- */
   const addCart = useCallback((id: string) => {
     setCart((c) => ({ ...c, [id]: (c[id] || 0) + 1 }));
   }, []);
+
+  // Смена филиала: выбрасываем из корзины позиции, которых в выбранной точке нет
+  // (не входят в её меню по branches либо сейчас в стоп-листе) — иначе гость
+  // оплатил бы то, что на этом баре не соберут.
+  const selectBranch = useCallback((b: BranchKey) => {
+    setBranch(b);
+    setCart((c) => {
+      let changed = false;
+      const next: Record<string, number> = {};
+      for (const id of Object.keys(c)) {
+        const p = ALL_PRODUCTS[id];
+        const inBranch = !!p && (!p.branches || p.branches.includes(b)) && !soldOut[b]?.includes(id);
+        if (inBranch) next[id] = c[id];
+        else changed = true;
+      }
+      return changed ? next : c;
+    });
+  }, [soldOut]);
 
   /** «Частичка» летит по дуге от кнопки товара к иконке заказа в шапке. */
   const flyToCart = useCallback((sourceEl: HTMLElement) => {
@@ -492,7 +545,7 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
           <p className="eyebrow">Сегодня в Muwa · {B.addr}</p>
           <h2 className="h2">ВИТРИНА <b>ДНЯ</b></h2>
           <div className="tabbar">
-            <BranchSeg branch={branch} onSelect={setBranch} />
+            <BranchSeg branch={branch} onSelect={selectBranch} />
             <TabSeg tab={tab} onSelect={setTab} />
             <span className="lead" style={{ fontSize: 14 }}>{TAB_HINTS[tab]}</span>
           </div>
@@ -669,7 +722,7 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
           <h2 className="h2">ЗАХОДИ <b>В ГОСТИ</b></h2>
           <div className="contacts-grid" style={{ marginTop: 30 }}>
             <div>
-              <BranchSeg branch={branch} onSelect={setBranch} style={{ marginBottom: 18 }} />
+              <BranchSeg branch={branch} onSelect={selectBranch} style={{ marginBottom: 18 }} />
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Адрес</span><b style={{ color: "var(--graphite-900)" }}>{B.addr}</b></div>
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Часы</span><span>Ежедневно 10:00–21:00</span></div>
               <div className="addr-row"><span className="cap" style={{ color: "var(--accent)", fontSize: 12, minWidth: 74 }}>Телефон</span><span>+7 846 000-00-00</span></div>
@@ -742,7 +795,7 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
                   {cartIds.length > 0 && (
                     <div style={{ marginTop: 22 }}>
                       <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>Филиал сборки</div>
-                      <BranchSeg branch={branch} onSelect={setBranch} full style={{ width: "100%" }} />
+                      <BranchSeg branch={branch} onSelect={selectBranch} full style={{ width: "100%" }} />
                       <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", margin: "18px 0 10px" }}>Ко времени</div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                         {TIMES.map((t) => (
@@ -819,13 +872,13 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
             <div className="dhead">
               <div>
                 <div className="cap" style={{ fontSize: 10.5, color: "var(--accent)" }}>Подарочный сертификат</div>
-                <b style={{ fontSize: 19, color: "var(--graphite-900)" }}>{giftStep === "form" ? "Оформление" : "Готово"}</b>
+                <b style={{ fontSize: 19, color: "var(--graphite-900)" }}>{giftStep === "form" ? "Оформление" : giftStep === "pay" ? "Оплата" : "Готово"}</b>
               </div>
               <button className="xbtn" onClick={() => setGiftOpen(false)}>×</button>
             </div>
             <div className="dbody">
               <div className="step-anim" key={giftStep}>
-              {giftStep === "form" ? (
+              {giftStep === "form" && (
                 <>
                   <GiftCardVisual amount={giftAmount} compact />
                   <div className="cap" style={{ fontSize: 11, color: "var(--text-muted)", margin: "18px 0 10px" }}>Номинал</div>
@@ -839,10 +892,25 @@ export default function MuwaSite({ initialSoldOut }: { initialSoldOut: Record<Br
                     <div className="field"><label>От кого</label><input suppressHydrationWarning className="inp" value={gFrom} onChange={(e) => setGFrom(e.target.value)} placeholder="твоё имя" /></div>
                   </div>
                   <div className="field"><label>Тёплое пожелание</label><textarea suppressHydrationWarning className="inp" value={gWish} onChange={(e) => setGWish(e.target.value)} placeholder="Пару слов от души" /></div>
-                  <button className="cta cta-red" style={{ width: "100%", marginTop: 6 }} disabled={!giftOk || buyingGift} onClick={payGift}>{buyingGift ? "Оплата…" : `Оплатить ${priceLabel(giftAmount)} →`}</button>
+                  <button className="cta cta-red" style={{ width: "100%", marginTop: 6 }} disabled={!giftOk} onClick={() => setGiftStep("pay")}>{`Оплатить ${priceLabel(giftAmount)} →`}</button>
                   <p className="lead" style={{ fontSize: 12, marginTop: 12, textAlign: "center" }}>СБП · T-Pay · демо-оплата</p>
                 </>
-              ) : (
+              )}
+
+              {giftStep === "pay" && (
+                <>
+                  <div className="row-sb" style={{ marginBottom: 8 }}><span className="lead" style={{ fontSize: 15 }}>К оплате</span><span className="ordernum" style={{ fontSize: 26 }}>{priceLabel(giftAmount)}</span></div>
+                  <p className="lead" style={{ fontSize: 13, margin: "0 0 18px" }}>Сертификат для {gTo}{gFrom ? ` · от ${gFrom}` : ""}</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <button className="cta cta-red" style={{ width: "100%" }} disabled={buyingGift} onClick={payGift}>Оплатить через СБП</button>
+                    <button className="cta cta-ink" style={{ width: "100%" }} disabled={buyingGift} onClick={payGift}>Оплатить через T-Pay</button>
+                  </div>
+                  <button className="cta cta-out" style={{ width: "100%", marginTop: 12 }} disabled={buyingGift} onClick={() => setGiftStep("form")}>← Назад</button>
+                  <p className="lead" style={{ fontSize: 12, marginTop: 14, textAlign: "center" }}>Демо-оплата · платёж не проводится</p>
+                </>
+              )}
+
+              {giftStep === "done" && (
                 <div style={{ textAlign: "center" }}>
                   <div className="thanks-ic" style={{ margin: "0 auto 14px" }}>✓</div>
                   <h3 style={{ fontSize: 20, margin: "0 0 6px", color: "var(--graphite-900)" }}>Сертификат отправлен!</h3>
